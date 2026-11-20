@@ -1,7 +1,5 @@
 # Table Talk Trivia
 
-![A cartoon family gathers around a Thanksgiving table with a tablet, beneath pictures of challah, a woman basketball player, a film clapperboard, and an ancient column.](cover.png)
-
 A short trivia game for families sharing one screen at a Thanksgiving table.
 
 ## Play it
