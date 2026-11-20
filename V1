@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Table Talk Trivia</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff5e5;color:#35291f;font:18px system-ui,sans-serif}main{max-width:680px;margin:auto;padding:22px 16px;min-height:100vh}h1{font-size:clamp(32px,7vw,48px);margin:10px 0}h2{font-size:26px;line-height:1.3}p{line-height:1.5}.eyebrow{color:#95603b;font-weight:750;letter-spacing:2px;font-size:13px}.card{background:#fffdf7;border:2px solid #ead8bd;border-radius:24px;padding:24px;margin:18px 0;box-shadow:0 8px 0 #ecdcc2}button,input,select{font:inherit;min-height:52px;border-radius:14px}button{background:#35684e;color:white;border:0;padding:14px 20px;cursor:pointer;font-weight:700}button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #d17d24;outline-offset:3px}.secondary{background:#eee3d0;color:#35291f}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.category{min-height:105px}.category:nth-child(2){background:#975039}.category:nth-child(3){background:#715783}.category:nth-child(4){background:#386b7b}.scores{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.pill{border:2px solid #e2d2b8;border-radius:30px;padding:8px 12px;font-size:15px;background:#fffdf7}.active{border-color:#35684e;background:#e6efdf;font-weight:750}.small{font-size:15px;color:#716451}input{width:100%;padding:12px;border:2px solid #b5b49f;background:white;color:#35291f;margin:12px 0}select{padding:10px;border:2px solid #b5b49f;background:white}.timer{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums}.track{height:9px;border-radius:10px;background:#e8ddcc;overflow:hidden;margin:12px 0}.fill{height:100%;background:#b46a30;transition:width .2s linear}.notice{min-height:27px;color:#496644;font-weight:650}.happy{animation:pop .5s ease}@keyframes pop{50%{transform:scale(1.04);background:#e6f2de}}@media(max-width:400px){.card{padding:18px}main{padding:16px 12px}button{padding:13px}.pill{font-size:14px}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<main>
+<div class="eyebrow">THANKSGIVING • FAMILY GAME NIGHT</div>
+<h1>Table Talk Trivia</h1>
+<div id="scores" class="scores" aria-label="Team scores"></div>
+<section id="screen"></section>
+</main>
+<script>
+const bank={
+"Judaism":[
+["What is the Jewish weekly day of rest called?","Shabbat","shabbos,sabbath"],
+["What eight-night Jewish holiday includes lighting a hanukkiah?","Hanukkah","chanukah,chanukkah,hanukah"],
+["What unleavened bread is eaten at a Passover seder?","Matzah","matzo,matzah bread,matzoh"],
+["What ram’s-horn instrument is sounded on Rosh Hashanah?","Shofar",""],
+["What braided bread is traditionally served on Shabbat?","Challah","challa,hallah"],
+["What Jewish holiday is known as the Day of Atonement?","Yom Kippur","yom kipur"],
+["In the Torah, who leads the Israelites out of Egypt?","Moses","moshe"],
+["What Jewish holiday celebrates Queen Esther’s story?","Purim",""]
+],
+"Sports":[
+["Olympic champion Simone Biles competes in which sport?","Gymnastics","artistic gymnastics"],
+["Olympic champion Katie Ledecky competes in which sport?","Swimming","freestyle swimming"],
+["What does the W stand for in WNBA?","Women’s","women,womens,woman"],
+["Which country won the first FIFA Women’s World Cup in 1991?","United States","usa,us,united states of america,america,u s a"],
+["How many minutes are in one regulation WNBA quarter?","10","ten,10 minutes,ten minutes"],
+["In what year did the WNBA begin playing games?","1997",""],
+["In American football, how many points is a touchdown worth before any extra attempt?","6","six"],
+["In baseball, how many strikes make a strikeout?","3","three"]
+],
+"Pop culture":[
+["In Frozen, what is the name of Elsa’s snowman friend?","Olaf",""],
+["What cowboy toy is Buzz Lightyear’s friend in Toy Story?","Woody",""],
+["What superhero is also known as Peter Parker?","Spider-Man","spiderman,spider man"],
+["What yellow Pokémon has red cheeks and a lightning-bolt-shaped tail?","Pikachu",""],
+["What green ogre is friends with Donkey in a DreamWorks movie series?","Shrek",""],
+["What fictional school does Harry Potter attend?","Hogwarts","hogwarts school of witchcraft and wizardry"],
+["In The Lion King, what is the name of the lion cub who grows up to be king?","Simba",""],
+["What video-game plumber has a brother named Luigi?","Mario",""]
+],
+"History":[
+["Who was the first president of the United States?","George Washington","washington"],
+["Which ancient civilization built the pyramids at Giza?","Ancient Egyptians","egyptians,egypt,ancient egypt"],
+["What ship carried the Pilgrims to what is now Massachusetts in 1620?","Mayflower","the mayflower"],
+["What year appears on the U.S. Declaration of Independence?","1776",""],
+["Who was the first person to walk on the Moon?","Neil Armstrong","armstrong"],
+["What ancient empire built the Colosseum in Rome?","Roman Empire","rome,roman,romans,the romans"],
+["What wall divided a German city until it opened in 1989?","Berlin Wall","the berlin wall,berlin"],
+["Which U.S. president issued the Emancipation Proclamation?","Abraham Lincoln","lincoln,abe lincoln"]
+]};
+const screen=document.getElementById("screen"),scores=document.getElementById("scores");
+let teams=2,points=[],turn=0,decks={},current=null,deadline=0,timer=null,live=false,phase="start";
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const norm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"").replace(/^the/,"");
+function distance(a,b){let r=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let n=[i];for(let j=1;j<=b.length;j++)n[j]=Math.min(n[j-1]+1,r[j]+1,r[j-1]+(a[i-1]===b[j-1]?0:1));r=n}return r[b.length]}
+function matches(s,q){let n=norm(s);if(!n)return false;return [q[1],...q[2].split(",").filter(Boolean)].some(x=>{let a=norm(x);if(n===a)return true;if(/\d/.test(a)||a.length<4)return false;return distance(n,a)<=(a.length>=8?2:1)})}
+function drawScores(){scores.innerHTML=points.map((p,i)=>`<span class="pill ${phase!=="end"&&i===turn%teams?"active":""}">Player ${i+1} · ${p} ${p===1?"point":"points"}</span>`).join("")}
+function startScreen(){
+clearInterval(timer);live=false;phase="start";scores.innerHTML="";
+screen.innerHTML=`<div class="card"><p>Pick a category, type your answer in 30 seconds, and earn a point for each correct answer.</p><p class="small">Each Player is a team. Five turns each. Minor spelling slips count; the table can approve an equivalent answer.</p><p class="small">Sports: 6 women’s sports questions and 2 general sports questions.</p><label for="count">Teams sharing this screen</label> <select id="count"><option value="2">2 teams</option><option value="3">3 teams</option></select><p><button id="start">Start game</button></p></div>`;
+document.getElementById("count").value=teams;
+document.getElementById("start").onclick=()=>{teams=+document.getElementById("count").value;points=Array(teams).fill(0);turn=0;decks=Object.fromEntries(Object.entries(bank).map(([k,v])=>[k,shuffle(v)]));choose()};
+}
+function choose(){
+clearInterval(timer);live=false;
+if(turn===teams*5){finish();return}
+phase="choose";drawScores();
+screen.innerHTML=`<p class="small">Round ${Math.floor(turn/teams)+1} of 5</p><h2>Player ${turn%teams+1}, pick a category.</h2><p class="small">Pass the screen to your team. The timer starts when you tap.</p><div class="grid">${Object.keys(bank).map(k=>`<button class="category" data-cat="${k}" ${decks[k].length?"":"disabled"}>${k}${decks[k].length?"":"<br><small>All played</small>"}</button>`).join("")}</div>`;
+screen.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>ask(b.dataset.cat));
+}
+function ask(cat){
+current=decks[cat].pop();phase="question";drawScores();
+screen.innerHTML=`<p class="small">Round ${Math.floor(turn/teams)+1} of 5 · Player ${turn%teams+1} · ${cat}</p><div class="card"><div><span class="timer" id="clock" role="timer">30</span> seconds</div><div class="track"><div class="fill" id="bar" style="width:100%"></div></div><h2 id="question"></h2><form id="form"><label class="small" for="answer">Your team’s answer</label><input id="answer" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="120" placeholder="Type here"><button type="submit">Check answer</button> <button class="secondary" type="button" id="pass">Pass</button></form><p class="notice" id="notice" aria-live="polite"></p></div>`;
+document.getElementById("question").textContent=current[0];
+document.getElementById("form").onsubmit=e=>{e.preventDefault();if(!live)return;if(Date.now()>=deadline){resolve(false,"Time’s up!");return}let v=document.getElementById("answer").value;if(!v.trim()){document.getElementById("notice").textContent="Type an answer first.";return}if(matches(v,current))resolve(true,"You got it!");else document.getElementById("notice").textContent="Try again — you still have time."};
+document.getElementById("pass").onclick=()=>resolve(false,"Let’s see the answer.");
+deadline=Date.now()+30000;live=true;timer=setInterval(tick,100);
+}
+function tick(){if(!live)return;let remaining=Math.max(0,deadline-Date.now());document.getElementById("clock").textContent=Math.ceil(remaining/1000);document.getElementById("bar").style.width=(remaining/300)+"%";if(!remaining)resolve(false,"Time’s up!")}
+function resolve(correct,message){
+if(!live)return;live=false;clearInterval(timer);phase="result";
+let submitted=document.getElementById("answer").value.trim();
+if(correct)points[turn%teams]++;
+drawScores();
+screen.innerHTML=`<div class="card ${correct?"happy":""}"><div class="eyebrow">${correct?"+1 POINT":"GOOD TEAM EFFORT"}</div><h2>${message}</h2><p id="reveal"></p><p class="small" id="submitted"></p><div id="review"></div><p><button id="next">${turn+1===teams*5?"See final scores":"Next team"}</button></p></div>`;
+document.getElementById("reveal").textContent="Answer: "+current[1];
+document.getElementById("submitted").textContent=submitted?"You typed: "+submitted:"";
+if(!correct&&submitted){
+document.getElementById("review").innerHTML=`<p class="small">Same answer, different wording or spelling? If the table agrees, count it.</p><button class="secondary" id="override">Count it as correct</button>`;
+document.getElementById("override").onclick=()=>{points[turn%teams]++;drawScores();document.getElementById("review").innerHTML='<p class="notice">Counted! +1 point.</p>'};
+}
+document.getElementById("next").onclick=()=>{turn++;choose()};
+}
+function finish(){
+phase="end";drawScores();let best=Math.max(...points),winners=points.map((p,i)=>p===best?`Player ${i+1}`:null).filter(Boolean);
+screen.innerHTML=`<div class="card happy"><div class="eyebrow">THAT’S FIVE ROUNDS!</div><h2>${winners.length>1?"A shared victory!":winners[0]+" wins!"}</h2><p>${winners.join(" & ")} · ${best} of 5 points</p>${points.map((p,i)=>`<p>Player ${i+1}: <strong>${p} points</strong></p>`).join("")}<button id="again">Play again</button><p class="small">Fresh shuffled questions every game; some favorites may return.</p></div>`;
+document.getElementById("again").onclick=startScreen;
+}
+startScreen();
+</script>
+</html>
